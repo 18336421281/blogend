@@ -67,6 +67,7 @@ public class ArticleService extends ServiceImpl<ArticleMapper, Article> {
                 .eq(Article::getArticleId, articleId));
         Category category = categoryMapper.selectOne(Wrappers.<Category>lambdaQuery()
                 .eq(Category::getCateName, cateName));
+
         Optional.ofNullable(category)
                 .filter(cate -> cate != null)
                 .map(cate -> {

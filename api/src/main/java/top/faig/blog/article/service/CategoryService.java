@@ -10,9 +10,9 @@ import top.faig.blog.code.article.mapper.ArticleMapper;
 import top.faig.blog.code.article.mapper.CategoryMapper;
 import top.faig.blog.common.type.ArticleType;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * <p>
@@ -29,56 +29,34 @@ public class CategoryService extends ServiceImpl<CategoryMapper, Category> {
     private final ArticleMapper articleMapper;
 
     public void add(String name) {
+        // 查看数据库 是否存在该分类
         Category category = this.getOne(Wrappers.<Category>lambdaQuery()
                 .eq(Category::getCateName, name));
-        Optional.ofNullable(category)
-                .filter(cate -> cate == null)
-                .map(cate -> {
-                    this.save(new Category().setCateName(cate.getCateName()));
-                    return cate;
-                });
+
+        if(!Objects.isNull(category)){
+            this.save(new Category()
+                    .setCateName(category.getCateName())
+            );
+        }
     }
 
     public List<Category> classCount() {
-        List<Article> articleList = articleMapper.selectList(Wrappers.<Article>lambdaQuery()
+        // 从 mapper 取集合数据
+        List<Article> articles = articleMapper.selectList(Wrappers.<Article>lambdaQuery()
                 .eq(Article::getState, ArticleType.RELEASE.getType()));
-        List<Category> categoryList = this.list();
-        categoryList.stream().forEach(category -> {
-            articleList.stream().forEach(article -> {
-                Optional.ofNullable(article)
-                        .filter(art -> art.getCateId() != null && art.getCateId().equals(category.getCateId()))
-                        .map(art -> {
-                            Optional.ofNullable(art)
-                                    .filter(a -> category.getCount() == null)
-                                    .map(a -> {
-                                        category.setCount(1);
-                                        return art;
-                                    })
-                                    .orElseGet(() -> {
-                                        category.setCount(category.getCount() + 1);
-                                        return art;
-                                    });
-                            return art;
-                        });
+        List<Category> categories = this.list();
 
-            });
+        // 统计分类个数
+        categories.forEach(category -> {
+            long count = articles.stream()
+                    .filter(art -> Objects.equals(art.getCateId(), category.getCateId()))
+                    .count();
+            category.setCount((int) count);
         });
-        Collections.sort(categoryList, (o1, o2) -> {
-            Optional.ofNullable(o1)
-                    .filter(o -> o.getCount() == null)
-                    .map(o -> {
-                        o1.setCount(0);
-                        return o;
-                    });
-            Optional.ofNullable(o2)
-                    .filter(o -> o.getCount() == null)
-                    .map(o -> {
-                        o2.setCount(0);
-                        return o;
-                    });
-            return o2.getCount() - o1.getCount();
-        });
-        return categoryList;
+
+        // 排序
+        categories.sort((o1, o2) -> o2.getCount() - o1.getCount());
+        return categories;
     }
 
 }

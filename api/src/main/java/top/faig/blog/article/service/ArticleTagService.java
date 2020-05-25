@@ -30,34 +30,31 @@ public class ArticleTagService extends ServiceImpl<ArticleTagMapper, ArticleTag>
 
 
     public void stick(Integer articleId, String tagNames) {
-        Optional.ofNullable(articleId)
-                .filter(id -> id != null)
-                .map(id -> {
-                    this.remove(Wrappers.<ArticleTag>lambdaQuery()
-                            .eq(ArticleTag::getArticleId, id));
-                    ArticleTag articleTag = new ArticleTag();
-                    articleTag.setArticleId(id);
-                    String[] split = tagNames.split(",");
-                    Arrays.stream(split).forEach(item -> {
-                        Tags tags = tagsMapper.selectOne(Wrappers.<Tags>lambdaQuery()
-                            .eq(Tags::getTagName, item));
-                        Optional.ofNullable(tags)
-                                .filter(t -> t != null)
-                                .map(t -> {
-                                    articleTag.setTagId(t.getTagId());
-                                    this.save(articleTag);
-                                    return t;
-                                })
-                                .orElseGet(() -> {
-                                    Tags tags2 = new Tags();
-                                    tags2.setTagName(item);
-                                    tagsMapper.insert(tags2);
-                                    articleTag.setTagId(tags2.getTagId());
-                                    this.save(articleTag);
-                                    return tags2;
-                                });
+        this.remove(Wrappers.<ArticleTag>lambdaQuery().eq(ArticleTag::getArticleId, articleId));
+
+        ArticleTag articleTag = new ArticleTag();
+        articleTag.setArticleId(articleId);
+        String[] split = tagNames.split(",");
+
+        Arrays.stream(split).forEach(item -> {
+            Tags tags = tagsMapper.selectOne(Wrappers.<Tags>lambdaQuery()
+                    .eq(Tags::getTagName, item));
+
+            Optional.ofNullable(tags)
+                    .filter(t -> t != null)
+                    .map(t -> {
+                        articleTag.setTagId(t.getTagId());
+                        this.save(articleTag);
+                        return t;
+                    })
+                    .orElseGet(() -> {
+                        Tags tags2 = new Tags();
+                        tags2.setTagName(item);
+                        tagsMapper.insert(tags2);
+                        articleTag.setTagId(tags2.getTagId());
+                        this.save(articleTag);
+                        return tags2;
                     });
-                    return id;
-                });
+        });
     }
 }
