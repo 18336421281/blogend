@@ -6,4 +6,4 @@ blogend = Spring Boot + Mybatis Plus <br/>
 blogfrond = Vue + Element UI   <br/>
 
 项目已部署上线 <br/>
-网址： https://fhs.faig.top/dist
+网址： https://blog.faig.top
